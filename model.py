@@ -219,7 +219,13 @@ class EnsNet(nn.Module):
         pred_classes = torch.stack(all_logits, dim = 0).argmax(dim = -1) # Shape: (num_voters, batch_size)
  
         # Get majority vote among predicted classes
-        return torch.mode(pred_classes, dim = 0).values # Mode along voter dimension
+            # Note: torch.mode() is not implemented on MPS
+        votes = [
+            torch.bincount(vote_batch, minlength = 10).argmax()
+            for vote_batch in pred_classes.transpose(1, 0)
+        ]
+            
+        return torch.stack(votes)
 
     def forward(
         self, X: torch.Tensor
