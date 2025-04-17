@@ -16,13 +16,13 @@ parser.add_argument('-nw', '--num_workers', help = 'Number of workers for datalo
                     type = int, default = 0)
 parser.add_argument('-ne', '--num_epochs', help = 'Number of epochs to train model for.', 
                     type = int, default = 15)
-parser.add_argument('-bs', '--batch_size', help = 'Size of batches to split training set.',
+parser.add_argument('-bs', '--batch_size', help = 'Size of batches to divide training and testing set.',
                     type = int, default = 100)
-parser.add_argument('-lr', '--learning_rate', help = 'Learning rate for the optimizer.', 
+parser.add_argument('-lr', '--learning_rate', help = 'Learning rate for the optimizers.', 
                     type = float, default = 0.01)
-parser.add_argument('-p', '--patience', help = 'Number of epochs to wait before early stopping.', 
+parser.add_argument('-p', '--patience', help = 'Number of epochs to wait, without improvement, before early stopping.', 
                     type = int, default = 5)
-parser.add_argument('-md', '--min_delta', help = 'Minimum decrease in loss to reset patience.', 
+parser.add_argument('-md', '--min_delta', help = 'Minimum change in performance metric to reset early stopping counter.', 
                     type = float, default = 0.001)
 
 args = parser.parse_args()

@@ -30,7 +30,7 @@ def get_dataloaders(root: str,
                     batch_size: int, 
                     num_workers: int = 0) -> Tuple[DataLoader, DataLoader]:
     '''
-    Creates training and testing dataloaders for the MNIST dataset
+    Creates training and testing dataloaders for the MNIST dataset.
 
     Args:
         root (str): Path to download MNIST data.
