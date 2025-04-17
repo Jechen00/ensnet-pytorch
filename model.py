@@ -5,7 +5,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Type
 
 
 #####################################
@@ -93,12 +93,14 @@ class EnsNetBaseCNN(nn.Module):
     The base CNN to the EnsNet model used to classify MNIST data. This is used to get the final feature maps 
     as well as a single set of votes (logits) for the EnsNet model's majority vote prediction.
     The architecture follows from the EnsNet paper: https://arxiv.org/pdf/2003.08562v3.
+
+    Args:
+        num_classes (int): Number of class labels.
     
     '''
-    def __init__(self):
+    def __init__(self, num_classes: int):
         super().__init__()
         self.cnn_body = nn.Sequential()
-        
         self.cnn_body.add_module(
             'cnn_block_1',
             nn.Sequential(
@@ -110,7 +112,6 @@ class EnsNetBaseCNN(nn.Module):
                 nn.MaxPool2d(kernel_size = 2)
             )
         )
-        
         self.cnn_body.add_module(
             'cnn_block_2',
             nn.Sequential(
@@ -129,7 +130,7 @@ class EnsNetBaseCNN(nn.Module):
             nn.BatchNorm1d(512),
             nn.Dropout(0.5),
             DropConnectLinear(512, 512, drop_prob = 0.5), nn.ReLU(),
-            nn.LazyLinear(10)
+            nn.LazyLinear(num_classes)
         )
         
     def forward(self, X: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -140,7 +141,7 @@ class EnsNetBaseCNN(nn.Module):
             X (Tensor): Input tensor of shape (batch_size, in_channels, height, width)
 
         Returns:
-            logits (Tensor): Output logits of shape (batch_size, 10), rows are the class scores.
+            logits (Tensor): Output logits of shape (batch_size, num_classes), rows are the class scores.
             final_feature_maps (Tensor): Final feature maps before classifier. 
                                          Shape is (batch_size, 2000, new_height, new_width)
         '''
@@ -153,9 +154,12 @@ class EnsNetFCSN(nn.Module):
     '''
     A single fully connected subnetwork (FCSN) for the EnsNet model classifying MNIST data.
     The architecture follows from the EnsNet paper: https://arxiv.org/pdf/2003.08562v3.
+
+    Args:
+        num_classes (int): Number of class labels.
     
     '''
-    def __init__(self):
+    def __init__(self, num_classes):
         super().__init__()
         self.subnet = nn.Sequential(
             nn.Flatten(),
@@ -163,7 +167,7 @@ class EnsNetFCSN(nn.Module):
             nn.BatchNorm1d(512),
             nn.Dropout(0.5),
             DropConnectLinear(512, 512, drop_prob = 0.5), nn.ReLU(),
-            nn.LazyLinear(10)
+            nn.LazyLinear(num_classes)
         )
         
     def forward(self, X: torch.Tensor) -> torch.Tensor:
@@ -175,76 +179,93 @@ class EnsNetFCSN(nn.Module):
                         In a EnsNet model, this would be the divided feature maps from the base CNN.
 
         Returns:
-            Tensor: Output logits of shape (batch_size, 10), rows are the class scores.
+            Tensor: Output logits of shape (batch_size, num_classes), rows are the class scores.
         '''
         return self.subnet(X)
         
 class EnsNet(nn.Module):
     '''
-    EnsNet model for classifying MNIST data, as described by https://arxiv.org/pdf/2003.08562v3.
+    EnsNet model consisting of a base CNN and multiple subnetworks. 
+    The base CNN is responsible for producing both a set of logits and the final convolutional 
+    feature maps. These feature maps are partitioned among the subnetworks, 
+    each of which also produce their own set of logits. During inference, predictions are then made through majority vote.
+    Reference: https://arxiv.org/pdf/2003.08562v3.
 
     Args:
-        num_subnets (int): Number of fully-connected subnetworks to include as voters.
-                           This also determines the number of chunks to split the base CNN feature maps into.
+        base_cnn (Type[nn.Module]): A class for the base CNN architecture.
+                                    This must accept `num_classes` as an argument during instantiation.
+                                    It's forward pass should return classification logits
+                                    and the final feature maps before the classifier layers.
+        subnet (Type[nn.Module]): A class for the architecture of each subnetwork.
+                                  This must accept `num_classes` as an argument during instantiation.
+                                  It's forward pass should return classification logits.
+        num_subnets (int): Number of fully-connected subnetworks to include as ensemble voters. This also determines 
+                           the number of chunks to split the base CNN feature maps into. Default is 10.
+
+         num_classes (int): Number of class labels. For the MNIST dataset, this is set to 10 (default).
     '''
-    def __init__(self, num_subnets: int = 10):
+    def __init__(self, 
+                 base_cnn: Type[nn.Module], 
+                 subnet: Type[nn.Module],
+                 num_subnets: int = 10, 
+                 num_classes: int = 10):
         super().__init__()
         
-        self.num_subnets = num_subnets
+        self.num_subnets, self.num_classes = num_subnets, num_classes
         
         # Create base CNN to extract features before division
-        self.base_cnn = EnsNetBaseCNN()
+        self.base_cnn = base_cnn(num_classes)
         
         # Create fully connected subnetworks to get votes
         self.subnets = nn.ModuleList([
-            EnsNetFCSN() for _ in range(num_subnets)
+            subnet(num_classes) for _ in range(num_subnets)
         ])
     
     def predict(self, X: torch.Tensor) -> torch.Tensor:
         '''
-        Predicts the class label(s) (0-9) for the input image(s) 
-        through majority vote among the base CNN and subnetworks.
+        Predicts the class labels, given a batch of input images.
+        This is done through majority vote among the base CNN and subnetworks.
 
         Args:
-            X (torch.Tensor): Input tensor of shape (batch_size, in_channels, height, width)
+            X (Tensor): Batch of input images. The shape is (batch_size, in_channels, height, width)
         Returns:
-            torch.Tensor: Class labels of each input sample in X.
-                          Shape is (batch_size,), where each entry is an integer class label.
+            Tensor: Class labels of each input sample in X.
+                    Shape is (batch_size,), where each entry is an index for a class label.
         '''
         # Get logits from the base CNN and subnets
-        cnn_logits, subnet_logits, _ = self.forward(X)
-        all_logits = [cnn_logits] + subnet_logits # num_voters = num_subnets + 1
+        cnn_logits, subnets_logits, _ = self.forward(X)
+        all_logits = [cnn_logits] + subnets_logits # num_voters = num_subnets + 1
 
         # Get predicted classes from the base CNN and each subnet
         pred_classes = torch.stack(all_logits, dim = 0).argmax(dim = -1) # Shape: (num_voters, batch_size)
  
         # Get majority vote among predicted classes
-            # Note: torch.mode() is not implemented on MPS
+            # Note: `torch.mode()` is not implemented on MPS, so I used `torch.bincount()` instead.
         votes = [
-            torch.bincount(vote_batch, minlength = 10).argmax()
-            for vote_batch in pred_classes.transpose(1, 0)
+            torch.bincount(sample_votes, minlength = self.num_classes).argmax()
+            for sample_votes in pred_classes.transpose(1, 0)
         ]
             
         return torch.stack(votes)
-
+    
     def forward(
         self, X: torch.Tensor
     ) -> Tuple[torch.Tensor, List[torch.Tensor],  torch.Tensor]:
         '''
         Forward pass of EnsNet model. 
-        The base CNN produces a set of logits (class scores) as well as feature maps.
-        The feature maps are then divided between several subnetworks 
-        that each produce their own set of logits (class socores).
+        The base CNN produces a set of logits as well as feature maps.
+        The feature maps are then partitioned (along channel dimension) among several subnetworks
+        that each produce their own set of logits.
 
         Args:
             X (Tensor): Input tensor of shape (batch_size, in_channels, height, width)
 
         Returns:
             cnn_logits (Tensor): Output logits from base CNN. 
-                                 Shape is (batch_size, 10), rows are the class scores.
-            subnet_logits (List[Tensor]): List of output logits (Tensors) from all subnetworks. 
-                                          The i-th entry contains the output logits from the i-th subnetwork,
-                                          and has shape (batch_size, 10).
+                                 Shape is (batch_size, num_classes), rows are the class scores.
+            subnets_logits (List[Tensor]): List of output logits (Tensors) from all subnetworks. 
+                                           The i-th entry contains the output logits from the i-th subnetwork,
+                                           and has shape (batch_size, num_classes).
             cnn_feat_maps (Tensor): Final feature maps from base CNN. 
                                     Shape is (batch_size, 2000, new_height, new_width)
         '''
@@ -256,8 +277,8 @@ class EnsNet(nn.Module):
         div_feat_maps = torch.chunk(cnn_feat_maps, chunks = self.num_subnets, dim = 1)
 
         # Get logits from subnetworks
-        subnet_logits = []
+        subnets_logits = []
         for feat_maps, subnet in zip(div_feat_maps, self.subnets):
-            subnet_logits.append(subnet(feat_maps))
+            subnets_logits.append(subnet(feat_maps))
             
-        return cnn_logits, subnet_logits, cnn_feat_maps
+        return cnn_logits, subnets_logits, cnn_feat_maps
