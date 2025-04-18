@@ -4,7 +4,7 @@
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader
 
-import utils
+from . import utils
 from typing import Tuple
 
 # Transformations applied to each image

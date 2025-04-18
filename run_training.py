@@ -4,7 +4,7 @@
 import argparse
 import torch
 from torch import nn
-import utils, data_setup, model, engine
+from src import utils, data_setup, model, engine
 
 # Setup random seeds
 utils.set_seed(6)

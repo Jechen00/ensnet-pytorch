@@ -6,7 +6,7 @@ import torch
 import numpy as np
 from typing import Dict, Tuple, List, Sequence
 
-import utils
+from . import utils
 
 
 #####################################
