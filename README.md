@@ -50,12 +50,13 @@ The model can be trained by executing the run_training.py script from the comman
 -lr, --learning_rate     Learning rate for the optimizers. (default: 0.001)
 -p, --patience           Number of epochs to wait without improvement before early stopping. (default: 5)
 -md, --min_delta         Minimum change in performance metric to reset early stopping counter. (default: 0.001)
--sd, --save_dir          Directory to save the model. Required if `mod_name` is provided. (default: None)
+-sd, --save_dir          Directory to save the model. Required if `mod_name` is provided or `save_results` is True. (default: None)
 -mn, --mod_name          Filename for the saved model. Defaults to 'ensnet_model.pth' if given save_dir. (default: None)
+-sr, --save_results		 If included, saves the returned results as .pkl files in `save_dir.`
 ```
 ### Example usage
 ```
-python run_training.py -nw 0 -ne 15 -bs 100 -lr 0.001 -p 5 -md 0.001 -sd './saved_models' -mn 'ensnet_model.pth'
+python run_training.py -nw 0 -ne 15 -bs 100 -lr 0.001 -p 5 -md 0.001 -sd './saved_models' -mn 'ensnet_model.pth' -sr
 ```
 
 ## References

@@ -4,7 +4,9 @@
 import torch
 import random
 import numpy as np
+import pickle
 import os
+from typing import Union, Dict, List
 
 # Setup device and multiprocessing context
 if torch.cuda.is_available():
@@ -56,21 +58,39 @@ def save_model(model: torch.nn.Module,
         model (torch.nn.Module): PyTorch model that will be saved.
         save_dir (str): Directory to save the model to.
         mod_name (str): Filename for the saved model. 
-                        If this doesn't end with '.pth' or '.pt,' it will be added on.
 
     '''
     # Create directory if it doesn't exist
     os.makedirs(save_dir, exist_ok = True)
-    
-    # Add .pth if it is not in mod_name
-    if not mod_name.endswith('.pth') and not mod_name.endswith('.pt'):
-        mod_name += '.pth'
 
     # Create save path
     save_path = os.path.join(save_dir, mod_name)
 
     # Save model's state dict
     torch.save(obj = model.state_dict(), f = save_path)
+
+def save_results(results: Union[Dict, List],
+                 save_dir: str,
+                 save_name: str):
+    '''
+    Saves model results to the directory 'save_dir.'
+
+    Args:
+        results (Union[Dict, List]): A dictionary or list of model results to save.
+        save_dir (str): Directory to save results to.
+        save_name (str): Filename for the saved results. This needs to end with .pkl.
+
+    '''
+    assert save_name.endswith('.pkl'), 'save_name must end with .pkl.'
+
+    # Create directory if it doesn't exist
+    os.makedirs(save_dir, exist_ok = True)
+
+    # Create save path
+    save_path = os.path.join(save_dir, save_name)    
+
+    with open(save_path, 'wb') as f:
+        pickle.dump(results, f)
 
 def toggle_param_freeze(module: torch.nn.Module, freeze: bool):
     '''

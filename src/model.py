@@ -100,7 +100,7 @@ class EnsNetBaseCNN(nn.Module):
           While this is fine, the padding of the middle convolutional layers don't have their padding specified.
           Moreover, to get the paper's base CNN output shape of 6x6 feature maps, 
           we would need a padding size that increases the output spatial dimensions of the middle convolutional layers 
-          (i.e. padding > 1, with kernel_size = 3). With this in mind, I decided to set padding = 'same' for all
+          (i.e. padding > 1, with kernel_size = 3). With this in mind, I decided to set padding = 0 for all
           convolutional layers except the last one. This keeps the same base CNN output shape of 6x6 feature maps, 
           while also ensuring that we aren't increasing the output spatial dimensions in each layer.
           
@@ -114,10 +114,10 @@ class EnsNetBaseCNN(nn.Module):
         self.cnn_body.add_module(
             'cnn_block_1',
             nn.Sequential(
-                ConvBNDrop(64, kernel_size = 3, padding = 'same', drop_prob = 0.35),
-                ConvBNDrop(128, kernel_size = 3, padding = 'same', drop_prob = 0.35),
+                ConvBNDrop(64, kernel_size = 3, padding = 0, drop_prob = 0.35),
+                ConvBNDrop(128, kernel_size = 3, padding = 0, drop_prob = 0.35),
 
-                nn.LazyConv2d(256, kernel_size = 3, padding = 'same'), nn.ReLU(),
+                nn.LazyConv2d(256, kernel_size = 3, padding = 0), nn.ReLU(),
                 nn.BatchNorm2d(256),
                 nn.MaxPool2d(kernel_size = 2)
             )
@@ -125,8 +125,8 @@ class EnsNetBaseCNN(nn.Module):
         self.cnn_body.add_module(
             'cnn_block_2',
             nn.Sequential(
-                ConvBNDrop(512, kernel_size = 3, padding = 'same', drop_prob = 0.35, pre_dropout = True),
-                ConvBNDrop(1024, kernel_size = 3, padding = 'same', drop_prob = 0.35, pre_dropout = True),
+                ConvBNDrop(512, kernel_size = 3, padding = 0, drop_prob = 0.35, pre_dropout = True),
+                ConvBNDrop(1024, kernel_size = 3, padding = 0, drop_prob = 0.35, pre_dropout = True),
                 ConvBNDrop(2000, kernel_size = 3, drop_prob = 0.35, pre_dropout = True),
 
                 nn.MaxPool2d(kernel_size = 2),

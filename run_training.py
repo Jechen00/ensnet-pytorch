@@ -12,18 +12,33 @@ utils.set_seed(6)
 # Setup hyperparameters
 parser = argparse.ArgumentParser()
 
-parser.add_argument('-nw', '--num_workers', help = 'Number of workers for dataloaders.',
+parser.add_argument('-nw', '--num_workers', 
+                    help = 'Number of workers for dataloaders.',
                     type = int, default = 0)
-parser.add_argument('-ne', '--num_epochs', help = 'Number of epochs to train model for.', 
+parser.add_argument('-ne', '--num_epochs', 
+                    help = 'Number of epochs to train model for.', 
                     type = int, default = 15)
-parser.add_argument('-bs', '--batch_size', help = 'Size of batches to divide training and testing set.',
+parser.add_argument('-bs', '--batch_size', 
+                    help = 'Size of batches to divide training and testing set.',
                     type = int, default = 100)
-parser.add_argument('-lr', '--learning_rate', help = 'Learning rate for the optimizers.', 
-                    type = float, default = 0.01)
-parser.add_argument('-p', '--patience', help = 'Number of epochs to wait, without improvement, before early stopping.', 
-                    type = int, default = 5)
-parser.add_argument('-md', '--min_delta', help = 'Minimum change in performance metric to reset early stopping counter.', 
+parser.add_argument('-lr', '--learning_rate', 
+                    help = 'Learning rate for the optimizers.', 
                     type = float, default = 0.001)
+parser.add_argument('-p', '--patience', 
+                    help = 'Number of epochs to wait, without improvement, before early stopping.', 
+                    type = int, default = 5)
+parser.add_argument('-md', '--min_delta', 
+                    help = 'Minimum change in performance metric to reset early stopping counter.', 
+                    type = float, default = 0.001)
+parser.add_argument('-sd', '--save_dir', 
+                    help = 'Directory to save the model. Required if `mod_name` is provided or `save_results` is Tru.e',
+                    type = str, default = None)
+parser.add_argument('-mn', '--mod_name', 
+                    help = "Filename for the saved model. Defaults to 'ensnet_model.pth' if save_dir is given.",
+                    type = str, default = None)
+parser.add_argument('-sr', '--save_results', 
+                    help = 'If included, saves the returned results as .pkl files in `save_dir.`',
+                    action = 'store_true')
 
 args = parser.parse_args()
 
@@ -41,15 +56,11 @@ if __name__ == '__main__':
           f'    - patience:      {args.patience} \n'
           f'    - min_delta:     {args.min_delta} \n'
           f"{'#' * 50}") 
-    
+
     # Get dataloaders
     train_dl, test_dl = data_setup.get_dataloaders(root = './mnist_data',
                                                    batch_size = args.batch_size,
                                                    num_workers = args.num_workers)
-    
-    # Set up saving directory and file name
-    save_dir = './saved_models'
-    mod_name = 'ensnet_mnist_model.pth'
 
     # Get EnsNet model
     mod_kwargs = {
@@ -78,6 +89,6 @@ if __name__ == '__main__':
                                                       patience = args.patience,
                                                       min_delta = args.min_delta,
                                                       device = utils.DEVICE,
-                                                      save_mod = True,
-                                                      save_dir = save_dir,
-                                                      mod_name = mod_name)
+                                                      save_dir = args.save_dir,
+                                                      mod_name = args.mod_name,
+                                                      save_results = args.save_results)

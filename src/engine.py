@@ -4,7 +4,8 @@
 import torch
 
 import numpy as np
-from typing import Dict, Tuple, List, Sequence
+import os
+from typing import Dict, Tuple, List, Sequence, Optional
 
 from . import utils
 
@@ -154,7 +155,8 @@ def test_step(ensnet: torch.nn.Module,
               loss_fn: torch.nn.Module,
               device: torch.device) -> Dict:
     '''
-    Testing step for an EnsNet model. This function independently computes the loss and accuracy for base CNN and each subnetwork
+    Testing step for an EnsNet model. 
+    This function independently computes the loss and accuracy for base CNN and each subnetwork
     in the ensemble, across the entire dataset in dataloader. 
 
     Args:
@@ -218,21 +220,19 @@ def train(ensnet: torch.nn.Module,
           patience: int,
           min_delta: float,
           device: torch.device,
-          save_mod: bool = True,
-          save_dir: str = '',
-          mod_name: str = ''):
+          save_dir: Optional[str] = None,
+          mod_name: Optional[str] = None,
+          save_results: bool = False) -> Tuple[Dict, Dict, Dict]:
     
     '''
     Trains an EnsNet model by alternating between the base CNN and the subnetworks.
 
     During each epoch, the base CNN training step (subnetworks frozen) is performed first,
-    followed the the subnetwork training step (base CNN frozen). 
+    followed by the subnetwork training step (base CNN frozen). 
     Performance metrics (loss and/or accuracy) are computed on both the training and test sets 
     for the CNN, subnetworks, and the full ensemble. Early stopping is used to track improvements in ensemble test accuracy.
-    Note that the training metrics of the CNN and subnetworks 
-    are computed while their respective parameters are being updated.
-    Conversely, the training metric(s) of the full ensemble 
-    is computed at the end of the epoch, similar to the test step.
+    Note: The CNN and subnetworks' training metrics reflect performance during their respective training phases. 
+    In contrast, ensemble metrics are computed at the end of each epoch, using the full ensemble.
 
     Args:
         ensnet (torch.nn.Module): The EnsNet model containing a base CNN and multiple subnetworks.
@@ -247,25 +247,49 @@ def train(ensnet: torch.nn.Module,
         patience (int): Number of epochs to wait, with no improvement in accuracy, before early stopping.
         min_delta (float): Minimum change in accuracy to reset early stopping counter.
         device (torch.device): Device to compute on.
-        save_mod (bool, optional): If True, saves the model after each epoch. Default is True.
-        save_dir (str, optional): Directory to save the model to. Must be nonempty if save_mod is True.
-        mod_name (str, optional): Filename for the saved model. Must be nonempty if save_mod is True.
+
+        save_dir (str, optional): Directory to save best model and results. 
+                                  Required if mod_name is not None or save_results is True.
+        mod_name (str, optional): Filename for the saved model. If mod_name is None and save_dir is not None, 
+                                  this defaults to 'ensnet_model.pth.'
+        save_results (bool, optional): If True, saves the returned results as .pkl files in 'save_dir' (which must be specified).
+                                       If False, no results are saved.
 
     Returns:
         cnn_res (Dict): Dictionary containing training and test loss/accuracy for the base CNN.
         subnets_res (Dict): Dictionary containing training and test loss/accuracy for the subnetworks.
                             Each value is a list where the i-th entry is the loss/accuracy of the i-th subnetwork.
         ensemble_res (Dict): Dictionary containing ensemble accuracy over the training and test sets.
+                             It also contains the best accuracy value and the epoch that it was achieved.
     '''
 
-    if save_mod:
-        assert save_dir, 'save_dir cannot be None or empty.'
-        assert mod_name, 'mod_name cannot be None or empty.'
-        
-    assert len(subnets_optimizers) == ensnet.num_subnets, (
-       'Length of subnets_optimizers need to match number of subnetsworks in EnsNet.'
-    )
+    if save_results:
+        assert save_dir is not None, 'save_dir must be a specified string if save_results is True.'
+
+    match (save_dir, mod_name):
+        case (None, None):
+            pass # No saving needed
+
+        case (str(), str()):
+            if not mod_name.endswith(('.pth', '.pt')):
+                mod_name += '.pth' # Add .pth if mod_name doesn't end with .pth or .pt
+
+            print(f'{utils.BOLD_START}[NOTE]{utils.BOLD_END} ' + 
+                  f'The model and/or fit results will be saved to {save_dir} \n')
+
+        case (str(), None):
+            mod_name = 'ensnet_model.pth' # Set a default file name for saved model
+            print(f'{utils.BOLD_START}[NOTE]{utils.BOLD_END} ' + 
+                  f'The model and/or fit results will be saved to {save_dir} \n')
+
+        case (None, str()):
+            raise ValueError('save_dir must be a specified string if mod_name is given.')
     
+    # Check that number of subnet optimizers matches number of subnets
+    assert len(subnets_optimizers) == ensnet.num_subnets, (
+       'Length of subnets_optimizers need to match number of subnetworks in EnsNet.'
+    )
+
     # Stopper for early stopping based on ensemble test accuracy
     stopper = utils.EarlyStopping(patience = patience, 
                                   min_delta = min_delta, 
@@ -311,10 +335,10 @@ def train(ensnet: torch.nn.Module,
         subnets_res['test_acc'].append(test_res['subnets_acc'])
         
         # Calculate average loss and accuracy over subnetworks (for logging)
-        avg_subnets_train_loss = np.average(subnets_train_loss)
-        avg_subnets_train_acc = np.average(subnets_train_acc)
-        avg_subnets_test_loss = np.average(test_res['subnets_loss'])
-        avg_subnets_test_acc = np.average(test_res['subnets_acc'])
+        avg_subnets_train_loss = np.mean(subnets_train_loss)
+        avg_subnets_train_acc = np.mean(subnets_train_acc)
+        avg_subnets_test_loss = np.mean(test_res['subnets_loss'])
+        avg_subnets_test_acc = np.mean(test_res['subnets_acc'])
         
         # Calculate and store end-of-epoch ensemble accuracies
             # This requires another pass of the data, might slow down training a bit
@@ -336,7 +360,7 @@ def train(ensnet: torch.nn.Module,
               f'avg_test_loss = {avg_subnets_test_loss:<6.4f} | ' +
               f'avg_test_acc = {avg_subnets_test_acc:<6.4f}')
         
-        print(f'{utils.BOLD_START}[FULL ENSNET]{utils.BOLD_END:} | ' +
+        print(f'{utils.BOLD_START}[FULL ENSNET]{utils.BOLD_END} | ' +
               f"{'-'*23:<23} | " +
               f'train_acc = {ensemble_train_acc:<10.4f} | ' +
               f"{'-'*22:<22} | " +
@@ -345,11 +369,31 @@ def train(ensnet: torch.nn.Module,
         # Determine if early stopping should be triggered
         stopper(ensemble_test_acc)
         if not stopper.stop:
-            # Save model if there is improvement in test accuracy
-            if stopper.improvement and save_mod:
-                utils.save_model(ensnet, save_dir, mod_name)
-                print(f'{utils.BOLD_START}[SAVED]{utils.BOLD_END} Adequate improvement in EnsNet test accuracy. Model saved.\n')
+            
+            if stopper.improvement:
+                update_str = f'{utils.BOLD_START}[UPDATE]{utils.BOLD_END} Adequate improvement in EnsNet test accuracy.'
+
+                # Save epoch number and test accuracy if there was improvement
+                ensemble_res['best_epoch'] = epoch
+                ensemble_res['best_test_acc'] = ensemble_test_acc
+
+                # Save model if needed
+                if mod_name is not None:
+                    utils.save_model(ensnet, save_dir, mod_name)
+                    update_str += ' Model saved.'
+
+                print(update_str + '\n')
         else:
             break
+    
+    # Save results to save_dir if needed
+    if save_results:
+        base_name = os.path.splitext(mod_name)[0]
+        utils.save_results(cnn_res, save_dir, f'{base_name}_cnn_res.pkl')
+        utils.save_results(subnets_res, save_dir, f'{base_name}_subnets_res.pkl')
+        utils.save_results(ensemble_res, save_dir, f'{base_name}_ensemble_res.pkl')
+
+        print(f'{utils.BOLD_START}[UPDATE]{utils.BOLD_END} ' +
+                            'Training finished and results have been saved.')
 
     return cnn_res, subnets_res, ensemble_res
