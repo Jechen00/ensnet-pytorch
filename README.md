@@ -55,8 +55,14 @@ The model can be trained by executing the run_training.py script from the comman
 -sr, --save_results		 If included, saves the returned results as .pkl files in `save_dir.`
 ```
 ### Example usage
+If we are typing all arguments out, running the program may look like this:
 ```
 python run_training.py -nw 0 -ne 15 -bs 100 -lr 0.001 -p 5 -md 0.001 -sd './saved_models' -mn 'ensnet_model.pth' -sr
+```
+
+Alternatively, we can edit the arguments in the `args.txt` file and run the program like this:
+```
+python run_training.py @args.txt
 ```
 
 ## References

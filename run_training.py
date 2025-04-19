@@ -10,7 +10,7 @@ from src import utils, data_setup, model, engine
 utils.set_seed(6)
 
 # Setup hyperparameters
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(fromfile_prefix_chars = '@')
 
 parser.add_argument('-nw', '--num_workers', 
                     help = 'Number of workers for dataloaders.',
