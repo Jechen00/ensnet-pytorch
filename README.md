@@ -52,7 +52,7 @@ The model can be trained by executing the run_training.py script from the comman
 -md, --min_delta         Minimum change in performance metric to reset early stopping counter. (default: 0.001)
 -sd, --save_dir          Directory to save the model. Required if `mod_name` is provided or `save_results` is True. (default: None)
 -mn, --mod_name          Filename for the saved model. Defaults to 'ensnet_model.pth' if given save_dir. (default: None)
--sr, --save_results		 If included, saves the returned results as .pkl files in `save_dir.`
+-sr, --save_results      If included, saves the returned results as .pkl files in `save_dir.`
 ```
 ### Example usage
 If we are typing all arguments out, running the program may look like this:
