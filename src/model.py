@@ -266,7 +266,9 @@ class EnsNet(nn.Module):
                     Shape is (batch_size,), where each entry is an index for a class label.
         '''
         for logit in subnets_logits:
-            assert cnn_logits.shape == logit.shape, f'Shape mismatch: Shape of cnn_logits and tensors in subnets_logits must be the same.'
+            assert cnn_logits.shape == logit.shape, (
+                f'Shape mismatch: Each set of subnetwork logits must match cnn_logits in shape.'
+            )
 
         all_logits = [cnn_logits] + subnets_logits # num_voters = num_subnets + 1
 

@@ -381,8 +381,11 @@ def train(ensnet: torch.nn.Module,
                 if mod_name is not None:
                     utils.save_model(ensnet, save_dir, mod_name)
                     update_str += ' Model saved.'
-
+                
                 print(update_str + '\n')
+            else:
+                print('\n') # Should have a line break after each epoch
+
         else:
             break
     
