@@ -12,31 +12,31 @@ utils.set_seed(6)
 # Setup hyperparameters
 parser = argparse.ArgumentParser(fromfile_prefix_chars = '@')
 
-parser.add_argument('-nw', '--num_workers', 
+parser.add_argument('-nw', '--num-workers', 
                     help = 'Number of workers for dataloaders.',
                     type = int, default = 0)
-parser.add_argument('-ne', '--num_epochs', 
+parser.add_argument('-ne', '--num-epochs', 
                     help = 'Number of epochs to train model for.', 
                     type = int, default = 15)
-parser.add_argument('-bs', '--batch_size', 
+parser.add_argument('-bs', '--batch-size', 
                     help = 'Size of batches to divide training and testing set.',
                     type = int, default = 100)
-parser.add_argument('-lr', '--learning_rate', 
+parser.add_argument('-lr', '--learning-rate', 
                     help = 'Learning rate for the optimizers.', 
                     type = float, default = 0.001)
 parser.add_argument('-p', '--patience', 
                     help = 'Number of epochs to wait, without improvement, before early stopping.', 
                     type = int, default = 5)
-parser.add_argument('-md', '--min_delta', 
+parser.add_argument('-md', '--min-delta', 
                     help = 'Minimum change in performance metric to reset early stopping counter.', 
                     type = float, default = 0.001)
-parser.add_argument('-sd', '--save_dir', 
+parser.add_argument('-sd', '--save-dir', 
                     help = 'Directory to save the model. Required if `mod_name` is provided or `save_results` is Tru.e',
                     type = str, default = None)
-parser.add_argument('-mn', '--mod_name', 
+parser.add_argument('-mn', '--mod-name', 
                     help = "Filename for the saved model. Defaults to 'ensnet_model.pth' if save_dir is given.",
                     type = str, default = None)
-parser.add_argument('-sr', '--save_results', 
+parser.add_argument('-sr', '--save-results', 
                     help = 'If included, saves the returned results as .pkl files in `save_dir.`',
                     action = 'store_true')
 

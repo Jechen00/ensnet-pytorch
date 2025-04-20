@@ -44,15 +44,15 @@ pip install torchvision==0.21.0
 ## Training Instructions
 The model can be trained by executing the run_training.py script from the command line. This script accepts the following arguments:
 ```
--nw, --num_workers       Number of workers for dataloaders. (default: 0)
--ne, --num_epochs        Number of epochs to train the model for. (default: 15)
--bs, --batch_size        Size of batches for training and testing sets. (default: 100)
--lr, --learning_rate     Learning rate for the optimizers. (default: 0.001)
+-nw, --num-workers       Number of workers for dataloaders. (default: 0)
+-ne, --num-epochs        Number of epochs to train the model for. (default: 15)
+-bs, --batch-size        Size of batches for training and testing sets. (default: 100)
+-lr, --learning-rate     Learning rate for the optimizers. (default: 0.001)
 -p, --patience           Number of epochs to wait without improvement before early stopping. (default: 5)
--md, --min_delta         Minimum change in performance metric to reset early stopping counter. (default: 0.001)
--sd, --save_dir          Directory to save the model. Required if `mod_name` is provided or `save_results` is True. (default: None)
--mn, --mod_name          Filename for the saved model. Defaults to 'ensnet_model.pth' if given save_dir. (default: None)
--sr, --save_results      If included, saves the returned results as .pkl files in `save_dir.`
+-md, --min-delta         Minimum change in performance metric to reset early stopping counter. (default: 0.001)
+-sd, --save-dir          Directory to save the model. Required if `mod_name` is provided or `save_results` is True. (default: None)
+-mn, --mod-name          Filename for the saved model. Defaults to 'ensnet_model.pth' if given save_dir. (default: None)
+-sr, --save-results      If included, saves the returned results as .pkl files in `save_dir.`
 ```
 ### Example usage
 If we are typing all arguments out, running the program may look like this:
