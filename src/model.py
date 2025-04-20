@@ -100,7 +100,7 @@ class EnsNetBaseCNN(nn.Module):
           While this is fine, the padding of the middle convolutional layers don't have their padding specified.
           Moreover, to get the paper's base CNN output shape of 6x6 feature maps, 
           we would need a padding size that increases the output spatial dimensions of the middle convolutional layers 
-          (i.e. padding > 1, with kernel_size = 3). With this in mind, I decided to set padding = 0 for all
+          (i.e. padding > 1, with kernel_size = 3). With this in mind, I decided to set padding = 'same' for all
           convolutional layers except the last one. This keeps the same base CNN output shape of 6x6 feature maps, 
           while also ensuring that we aren't increasing the output spatial dimensions in each layer.
           
@@ -114,10 +114,10 @@ class EnsNetBaseCNN(nn.Module):
         self.cnn_body.add_module(
             'cnn_block_1',
             nn.Sequential(
-                ConvBNDrop(64, kernel_size = 3, padding = 0, drop_prob = 0.35),
-                ConvBNDrop(128, kernel_size = 3, padding = 0, drop_prob = 0.35),
+                ConvBNDrop(64, kernel_size = 3, padding = 'same', drop_prob = 0.35),
+                ConvBNDrop(128, kernel_size = 3, padding = 'same', drop_prob = 0.35),
 
-                nn.LazyConv2d(256, kernel_size = 3, padding = 0), nn.ReLU(),
+                nn.LazyConv2d(256, kernel_size = 3, padding = 'same'), nn.ReLU(),
                 nn.BatchNorm2d(256),
                 nn.MaxPool2d(kernel_size = 2)
             )
@@ -125,8 +125,8 @@ class EnsNetBaseCNN(nn.Module):
         self.cnn_body.add_module(
             'cnn_block_2',
             nn.Sequential(
-                ConvBNDrop(512, kernel_size = 3, padding = 0, drop_prob = 0.35, pre_dropout = True),
-                ConvBNDrop(1024, kernel_size = 3, padding = 0, drop_prob = 0.35, pre_dropout = True),
+                ConvBNDrop(512, kernel_size = 3, padding = 'same', drop_prob = 0.35, pre_dropout = True),
+                ConvBNDrop(1024, kernel_size = 3, padding = 'same', drop_prob = 0.35, pre_dropout = True),
                 ConvBNDrop(2000, kernel_size = 3, drop_prob = 0.35, pre_dropout = True),
 
                 nn.MaxPool2d(kernel_size = 2),
@@ -244,6 +244,30 @@ class EnsNet(nn.Module):
         '''
         # Get logits from the base CNN and subnets
         cnn_logits, subnets_logits, _ = self.forward(X)
+
+        # Get predictions
+        return self.predict_with_logits(cnn_logits, subnets_logits)
+    
+    def predict_with_logits(self, 
+                            cnn_logits: torch.Tensor, 
+                            subnets_logits: List[torch.Tensor]) -> torch.Tensor:
+        '''
+        Predicts the class labels, given logits from the base CNN and subnetworks.
+        This is done through majority vote among the base CNN and subnetworks.
+
+        Args:
+            cnn_logits (Tensor): Output logits from base CNN. 
+                                 Shape is (batch_size, num_classes), rows are the class scores.
+            subnets_logits (List[Tensor]): List of output logits (Tensors) from all subnetworks. 
+                                           The i-th entry contains the output logits from the i-th subnetwork,
+                                           and has shape (batch_size, num_classes).
+        Returns:
+            Tensor: Class labels of each input sample in X.
+                    Shape is (batch_size,), where each entry is an index for a class label.
+        '''
+        for logit in subnets_logits:
+            assert cnn_logits.shape == logit.shape, f'Shape mismatch: Shape of cnn_logits and tensors in subnets_logits must be the same.'
+
         all_logits = [cnn_logits] + subnets_logits # num_voters = num_subnets + 1
 
         # Get predicted classes from the base CNN and each subnet

@@ -374,7 +374,7 @@ def train(ensnet: torch.nn.Module,
                 update_str = f'{utils.BOLD_START}[UPDATE]{utils.BOLD_END} Adequate improvement in EnsNet test accuracy.'
 
                 # Save epoch number and test accuracy if there was improvement
-                ensemble_res['best_epoch'] = epoch
+                ensemble_res['best_epoch_idx'] = epoch
                 ensemble_res['best_test_acc'] = ensemble_test_acc
 
                 # Save model if needed
