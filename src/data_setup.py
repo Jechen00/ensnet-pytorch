@@ -1,25 +1,29 @@
 #####################################
 # Imports & Dependencies
 #####################################
-from torchvision import transforms, datasets
+import torch
+from torchvision import datasets
+from torchvision.transforms import v2
 from torch.utils.data import DataLoader
 
 from . import utils
 from typing import Tuple
 
 # Transformations applied to each image
-BASE_TRANSFORMS = transforms.Compose([
-    transforms.ToTensor(), # Convert to tensor and rescale pixel values to within [0, 1]
-    transforms.Normalize(mean = [0.1307], std = [0.3081]) # Normalize with MNIST stats
+BASE_TRANSFORMS = v2.Compose([
+    v2.ToImage(),  # Convert to tensor
+    v2.ToDtype(torch.float32, scale = True),  # Rescale pixel values to within [0, 1]
+    v2.Normalize(mean = [0.1307], std = [0.3081]) # Normalize with MNIST stats
 ])
 
-TRAIN_TRANSFORMS = transforms.Compose([
-    transforms.RandomAffine(degrees = 10, # Rotate up to -/+ 10 degrees
-                            scale = (0.8, 1.2), # Scale between 80 and 120 percent
-                            translate = (0.08, 0.08), # Translate up to -/+ 8 percent in both x and y
-                            shear = 0.3),  # Shear up to -/+ 0.3 degrees
-    transforms.ToTensor(), # Convert to tensor and rescale pixel values to within [0, 1]
-    transforms.Normalize(mean = [0.1307], std = [0.3081]), # Normalize with MNIST stats
+TRAIN_TRANSFORMS = v2.Compose([
+    v2.RandomAffine(degrees = 10, # Rotate up to -/+ 10 degrees
+                    scale = (0.8, 1.2), # Scale between 80 and 120 percent
+                    translate = (0.08, 0.08), # Translate up to -/+ 8 percent in both x and y
+                    shear = 0.3),  # Shear up to -/+ 0.3 degrees
+    v2.ToImage(),  # Convert to tensor
+    v2.ToDtype(torch.float32, scale = True),  # Rescale pixel values to within [0, 1]
+    v2.Normalize(mean = [0.1307], std = [0.3081]), # Normalize with MNIST stats
 ])
 
 
