@@ -26,13 +26,9 @@ git clone https://github.com/Jechen00/ensnet-pytorch.git
 ```
 
 #### 3) Install Packages
-Navigate into the ensnet-pytorch directory with ```cd ensnet-pytorch``` and run one of the following:
+Navigate into the ensnet-pytorch directory with ```cd ensnet-pytorch``` and run the following:
 ```
-# For pip:
 pip install -r requirements.txt
-
-# For conda/mamba:
-conda install -y -c conda-forge --file requirements.txt
 ```
 Alternatively, the packages can be installed manually like so:
 ```
