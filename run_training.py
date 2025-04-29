@@ -31,7 +31,7 @@ parser.add_argument('-md', '--min-delta',
                     help = 'Minimum change in performance metric to reset early stopping counter.', 
                     type = float, default = 0.001)
 parser.add_argument('-sd', '--save-dir', 
-                    help = 'Directory to save the model. Required if `mod_name` is provided or `save_results` is Tru.e',
+                    help = 'Directory to save the model. Required if `mod_name` is provided or `save_results` is True.',
                     type = str, default = None)
 parser.add_argument('-mn', '--mod-name', 
                     help = "Filename for the saved model. Defaults to 'ensnet_model.pth' if save_dir is given.",
