@@ -70,7 +70,8 @@ if __name__ == '__main__':
         'num_classes': len(train_dl.dataset.classes)
     }
     ensnet_mod = model.EnsNet(**mod_kwargs).to(utils.DEVICE)
-
+    ensnet_mod = torch.compile(ensnet_mod)
+    
     # Get loss function and optimizers
     loss_fn = nn.CrossEntropyLoss()
     cnn_optimizer = torch.optim.Adam(params = ensnet_mod.base_cnn.parameters(), lr = args.learning_rate)
