@@ -70,7 +70,7 @@ if __name__ == '__main__':
         'num_classes': len(train_dl.dataset.classes)
     }
     ensnet_mod = model.EnsNet(**mod_kwargs).to(utils.DEVICE)
-    ensnet_mod = torch.compile(ensnet_mod)
+    # ensnet_mod = torch.compile(ensnet_mod)
     
     # Get loss function and optimizers
     loss_fn = nn.CrossEntropyLoss()
