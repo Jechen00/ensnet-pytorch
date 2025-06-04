@@ -34,7 +34,7 @@ Alternatively, the packages can be installed manually like so:
 ```
 pip install numpy==2.2.4
 pip install matplotlib==3.10.1
-pip install torch==2.6.0
+pip install torch==2.7.0
 pip install torchvision==0.21.0
 ```
 
