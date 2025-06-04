@@ -32,10 +32,10 @@ pip install -r requirements.txt
 ```
 Alternatively, the packages can be installed manually like so:
 ```
-pip install numpy==2.2.4
-pip install matplotlib==3.10.1
+pip install numpy==2.2.6
+pip install matplotlib==3.10.3
 pip install torch==2.7.0
-pip install torchvision==0.21.0
+pip install torchvision==0.22.0
 ```
 
 ## Training Instructions
