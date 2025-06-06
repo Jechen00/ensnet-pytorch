@@ -63,4 +63,4 @@ python run_training.py @args.txt
 ```
 
 ## References
-Hirata, D., & Takahashi, N. 2023, IEICE Transactions on Information and Systems, E106.D, 1258, [doi: 10.1587/transinf.2022EDL8098](https://www.jstage.jst.go.jp/article/transinf/E106.D/7/E106.D_2022EDL8098/_article)
+Hirata, Daiki, and Norikazu Takahashi. “Ensemble learning in CNN augmented with fully connected subnetworks.” _IEICE Transactions on Information and Systems_, E106.D, no. 7, 1 July 2023, pp. 1258–1261, https://doi.org/10.1587/transinf.2022edl8098. 
